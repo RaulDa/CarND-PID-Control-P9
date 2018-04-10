@@ -1,98 +1,69 @@
-# CarND-Controls-PID
-Self-Driving Car Engineer Nanodegree Program
+# **PID Control**
 
 ---
 
-## Dependencies
+**PID Controller Project**
 
-* cmake >= 3.5
- * All OSes: [click here for installation instructions](https://cmake.org/install/)
-* make >= 4.1(mac, linux), 3.81(Windows)
-  * Linux: make is installed by default on most Linux distros
-  * Mac: [install Xcode command line tools to get make](https://developer.apple.com/xcode/features/)
-  * Windows: [Click here for installation instructions](http://gnuwin32.sourceforge.net/packages/make.htm)
-* gcc/g++ >= 5.4
-  * Linux: gcc / g++ is installed by default on most Linux distros
-  * Mac: same deal as make - [install Xcode command line tools]((https://developer.apple.com/xcode/features/)
-  * Windows: recommend using [MinGW](http://www.mingw.org/)
-* [uWebSockets](https://github.com/uWebSockets/uWebSockets)
-  * Run either `./install-mac.sh` or `./install-ubuntu.sh`.
-  * If you install from source, checkout to commit `e94b6e1`, i.e.
-    ```
-    git clone https://github.com/uWebSockets/uWebSockets 
-    cd uWebSockets
-    git checkout e94b6e1
-    ```
-    Some function signatures have changed in v0.14.x. See [this PR](https://github.com/udacity/CarND-MPC-Project/pull/3) for more details.
-* Simulator. You can download these from the [project intro page](https://github.com/udacity/self-driving-car-sim/releases) in the classroom.
+The goals / steps of this project are the following:
 
-There's an experimental patch for windows in this [PR](https://github.com/udacity/CarND-PID-Control-Project/pull/3)
+* Implementation of the PID controller in C++.
+* Tuning of the proportional, differential and integral tau parameters.
 
-## Basic Build Instructions
+[//]: # (Image References)
 
-1. Clone this repo.
-2. Make a build directory: `mkdir build && cd build`
-3. Compile: `cmake .. && make`
-4. Run it: `./pid`. 
+[image1]: ./output/Simulator.png "Simulator"
 
-Tips for setting up your environment can be found [here](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/0949fca6-b379-42af-a919-ee50aa304e6a/lessons/f758c44c-5e40-4e01-93b5-1a82aa4e044f/concepts/23d376c7-0195-4276-bdf0-e02f1f3c665d)
+## Rubric Points
 
-## Editor Settings
+Here I will consider the [rubric points](https://review.udacity.com/#!/rubrics/824/view) individually and describe how I addressed each point in my implementation.  
 
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
+---
 
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
 
-## Code Style
+### Algorithm structure and processing flow
 
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
+The algorithm is divided in the following source code files located in `/src`:
 
-## Project Instructions and Rubric
+`main.cpp` -> Main routine to read the CTE and call the PID functions implemented in the `PID` class.
 
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
+`PID.cpp` -> Initialization of tau parameters and update of proportional, integral and differential errors.
 
-More information is only accessible by people who are already enrolled in Term 2
-of CarND. If you are enrolled, see [the project page](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/f1820894-8322-4bb3-81aa-b26b3c6dcbaf/lessons/e8235395-22dd-4b87-88e0-d108c5e5bbf4/concepts/6a4d8d42-6a04-4aa6-b284-1697c0fd6562)
-for instructions and the project rubric.
+`twiddle.cpp` -> Twiddle algorithm for parameter optimization.
 
-## Hints!
+#### 1. Implementation
 
-* You don't have to follow this directory structure, but if you do, your work
-  will span all of the .cpp files here. Keep an eye out for TODOs.
+The PID procedure consists on the calculation of the steering angle during each cycle in function of the CTE. The `main` routine reads the mentioned CTE and calculates the error corresponding to each PID part via `UpdateErrors` (`PID` class). The tau parameters are applied to each of the calculated errors and finally the steering angle is obtained.
 
-## Call for IDE Profiles Pull Requests
+It is possible to stimulate the tau parameters so that their values are constant during the whole execution. To achieve this, the desired values can be set via `Init` function of `PID`. It is also possible to modify the parameters during execution through the class `Twiddle`, in order to find optimal values. For activating the twiddle functionality, the compiler switch `TWIDDLE` has been specified in `main`. If defined, the functions `CalcRunError` and `Twiddle_main` are cyclic called in the `main` routine. If not, the tau parameters will be constant and with the values defined in `Init`.
 
-Help your fellow students!
+#### 2. PID components effect
 
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to we ensure
-that students don't feel pressured to use one IDE or another.
+After implementing the PID controller simulations have been done with different values of the tau parameters, using both twiddle and manual tuning. The following conclusions have been made:
 
-However! I'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
+-For this simulator, it is not needed to apply the integral component to the steering angle. Positive values of the integral tau have made that the car goes off the road. The possible reason is that there is no systematic bias in the wheels of the car. Therefore, the integral tau parameter has been always tuned with the value `0`.
 
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
+-As expected, the proportional component is the most important of the controller. It defines the main steering angle of the car. If the proportional tau parameter is `0` (no proportional component), the car goes always off the road.
 
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
+-The differential components corrects the oscillations produced by the turn produced by the proportional component. The most accurate the differential tau parameter is, the less oscillations the car suffers.
 
-Frankly, I've never been involved in a project with multiple IDE profiles
-before. I believe the best way to handle this would be to keep them out of the
-repo root to avoid clutter. My expectation is that most profiles will include
-instructions to copy files to a new location to get picked up by the IDE, but
-that's just a guess.
+#### 3. Tau parameters tuning
 
-One last note here: regardless of the IDE used, every submitted project must
-still be compilable with cmake and make./
+Regarding tuning of the tau parameters, it has been found that the optimal configuration of the tau parameters depends on the car velocity. Therefore, a different throttle will make that the parameter configuration needs to be reworked.
 
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
+Regarding the methods used for tuning, the twiddle algorithm has been implemented and used. It has been found that it does not work well when determining the optimal configuration without having an estimated idea of which the optimal values could be. The reason is that, when modifying the parameters with high ranges, the car at some point gets off the road. Therefore, for this project the chosen approach has been to do manual tuning of the parameters, and once an initial estimation has been done, twiddle has been used for fine-tuning of the final parameter values.
 
+#### 4. Results
+
+It has been found that an appropiate configuration of the parameters is:
+
+Tau_proportional -> `3.1436`
+
+Tau_differential -> `2.0891`
+
+Tau_integral -> `0`
+
+With this configuration and a constant throttle of `0.1`, the car behaves as shown in QPWEOIRUQPOEWURQ
+
+#### 5. Possible improvements
+
+As possible improvements, an additional research of optimal parameter configurations for higher car velocities could be done. As mentioned, the current configuration works fine for a throttle of `0.1`, but it is of course interesting to make the car complete the whole lap with a velocity as high as possible. Therefore it will be investigated in the future which top velocity can be reached.
