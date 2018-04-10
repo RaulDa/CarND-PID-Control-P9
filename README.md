@@ -62,7 +62,7 @@ Tau_differential -> `2.0891`
 
 Tau_integral -> `0`
 
-With this configuration and a constant throttle of `0.1`, the car behaves as shown in QPWEOIRUQPOEWURQ
+With this configuration and a constant throttle of `0.1`, the car behaves as shown in [pid_video](video/pid_video.mp4)
 
 #### 5. Possible improvements
 
